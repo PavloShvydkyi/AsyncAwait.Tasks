@@ -8,6 +8,8 @@
 */
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AsyncAwait.Task1.CancellationTokens;
 
@@ -19,6 +21,7 @@ internal class Program
     /// <param name="args"></param>
     private static void Main(string[] args)
     {
+        
         Console.WriteLine("Mentoring program L2. Async/await.V1. Task 1");
         Console.WriteLine("Calculating the sum of integers from 0 to N.");
         Console.WriteLine("Use 'q' key to exit...");
@@ -26,12 +29,16 @@ internal class Program
 
         Console.WriteLine("Enter N: ");
 
+        var cts = new CancellationTokenSource();
         var input = Console.ReadLine();
         while (input.Trim().ToUpper() != "Q")
         {
+
+            Task calculationTask = null;
             if (int.TryParse(input, out var n))
             {
-                CalculateSum(n);
+               calculationTask = CalculateSumAsync(n, cts.Token);
+               Console.WriteLine("Enter new N to recalculate: ");
             }
             else
             {
@@ -39,12 +46,40 @@ internal class Program
                 Console.WriteLine("Enter N: ");
             }
 
+            
             input = Console.ReadLine();
+            cts.Cancel();
+            cts.Dispose();
+            cts = new CancellationTokenSource();
+            
         }
-
+        
         Console.WriteLine("Press any key to continue");
         Console.ReadLine();
     }
+
+    private static async Task CalculateSumAsync(int n, CancellationToken token)
+    {
+
+        try
+        {
+            var sum = await Calculator.CalculateAsync(n, token);
+
+            Console.WriteLine($"Sum for {n} = {sum}.");
+            Console.WriteLine();
+            Console.WriteLine("Enter N: ");
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine($"Calculation for {n} was cancelled.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Something goes wrong "+ex.Message);
+        }
+
+     }
+
 
     private static void CalculateSum(int n)
     {
