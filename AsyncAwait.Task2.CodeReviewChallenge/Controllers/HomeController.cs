@@ -25,15 +25,19 @@ public class HomeController : Controller
         return View();
     }
 
-    public ActionResult Privacy()
+    public async Task<ActionResult>  Privacy()
     {
-        ViewBag.Message = _privacyDataService.GetPrivacyDataAsync().Result;
+        ViewBag.Message = await _privacyDataService.GetPrivacyDataAsync();
+        // Если оно асинхронное (как прописано в интерфейсе ), то ждем результат кто его знает как реализация будет меняться 
+        //.Result;
         return View();
     }
 
     public async Task<IActionResult> Help()
     {
-        ViewBag.RequestInfo = await _assistant.RequestAssistanceAsync("guest").ConfigureAwait(false);
+        ViewBag.RequestInfo = await _assistant.RequestAssistanceAsync("guest");
+        // насколько я понял это метод сторонней библиотеки т.е. имеем дело с I\O т.е. паралелизм и отдельный поток не нужно...
+        //.ConfigureAwait(false);
         return View();
     }
 
