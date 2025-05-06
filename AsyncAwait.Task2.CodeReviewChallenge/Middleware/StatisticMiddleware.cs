@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncAwait.Task2.CodeReviewChallenge.Headers;
@@ -22,21 +23,30 @@ public class StatisticMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         string path = context.Request.Path;
-
-        var staticRegTask = Task.Run(
-            () => _statisticService.RegisterVisitAsync(path)
-                .ConfigureAwait(false)
-                .GetAwaiter().OnCompleted(UpdateHeaders));
-        Console.WriteLine(staticRegTask.Status); // just for debugging purposes
-
-        void UpdateHeaders()
-        {
-            context.Response.Headers.Add(
+        await _statisticService.RegisterVisitAsync(path);
+        long count = await _statisticService.GetVisitsCountAsync(path);
+        Console.WriteLine("Path {0}",path);
+        Console.WriteLine("Count {0}", count);
+        context.Response.Headers.Add(
                 CustomHttpHeaders.TotalPageVisits,
-                _statisticService.GetVisitsCountAsync(path).GetAwaiter().GetResult().ToString());
-        }
+                count.ToString());
+        /// Убрали использование Task.Run так так это не CPU bound task
+        /// sleep также убрали так как он не нужен 
 
-        Thread.Sleep(3000); // without this the statistic counter does not work
+        //var staticRegTask = Task.Run(
+        //    () => _statisticService.RegisterVisitAsync(path)
+        //        .ConfigureAwait(false)
+        //        .GetAwaiter().OnCompleted(UpdateHeaders));
+        //Console.WriteLine(staticRegTask.Status); // just for debugging purposes
+
+        //void UpdateHeaders()
+        //{
+        //    context.Response.Headers.Add(
+        //        CustomHttpHeaders.TotalPageVisits,
+        //        _statisticService.GetVisitsCountAsync(path).GetAwaiter().GetResult().ToString());
+        //}
+
+        //Thread.Sleep(3000); // without this the statistic counter does not work
         await _next(context);
     }
 }
